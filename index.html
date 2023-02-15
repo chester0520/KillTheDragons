@@ -139,7 +139,7 @@
                 分數: <span id="highscore-score">0</span>
             </p>
         </div>
-        <p id="bulletbg"><span id="bullettext">20</span>　</p>
+        <p id="bulletbg"><span id="bullettext">10</span>　</p>
     </div>
     <div id="footer">
         <br>
@@ -162,7 +162,9 @@
         // 子彈
         let bullet = 0
 
-        // 最高分
+        let player = '玩家1'
+
+        // 高分榜
         let highscore = { name: '', score: 0 }
         const highStorage = JSON.parse(localStorage.getItem('killdragon'))
         if (highStorage !== null) {
@@ -206,6 +208,50 @@
             })
         }
 
+        // 最高分
+        const HighScore = async () => {
+            // 如果 目前分數 > highscore-score 的值
+            if (score > $('#highscore-score').text()) {
+                // 跳出輸入玩家名稱 (sweetalert2 套件)
+                await Swal.fire({
+                    title: '恭喜你! 你是目前最高分!',
+                    inputLabel: '請輸入您的名字',
+                    inputValue: player,
+                    input: 'text'
+                })
+                const highPlayer = Swal.getInput()
+                
+                // 輸入後的玩家和分數，存到網頁裡的highscore
+                highscore.name = highPlayer.value
+                highscore.score = score
+                localStorage.setItem('killdragon', JSON.stringify(highscore))
+                
+                // 畫面更新
+                $('#highscore-player').text(highPlayer.value)
+                $('#highscore-score').text(score)
+            }
+        }
+
+        // 子彈為 0 的遊戲結束
+        const NoBullets = async () => {
+            if (bullet <= 0) {
+                clearInterval(timer)
+                $('#game img').remove()
+                $('#btn-start').attr('disabled', false)
+                $('#btn-reset').addClass('none')
+                $('#board').fadeIn('slow')
+                
+                // sweetalert2 套件
+                await Swal.fire({
+                    title: '子彈沒了，遊戲結束',
+                    icon: 'info',
+                    text: `你得到 ${score} 分`
+                })
+                // 最高分
+                HighScore()
+            }
+        }
+
         // 遊戲開始按紐
         $('#btn-start').click(function () {
             $(this).attr('disabled', true)
@@ -216,10 +262,10 @@
             $('#text-score').text(score)
             countdown = 60
             $('#text-time').text(countdown)
-            bullet = 20
+            bullet = 10
             $('#bullettext').text(bullet)
 
-            timer = setInterval(() => {
+            timer = setInterval(async () => {
                 // 倒數
                 countdown--
                 $('#text-time').text(countdown)
@@ -248,36 +294,21 @@
                 }
                 // 時間到
                 if (countdown <= 0) {
-
-                    // sweetalert2 套件
-                    Swal.fire({
-                        title: '時間到，遊戲結束',
-                        icon: 'info',
-                        text: `你得到 ${score} 分`
-                    })
                     clearInterval(timer)
                     $('#game img').remove()
                     $(this).attr('disabled', false)
                     $('#btn-reset').addClass('none')
                     $('#board').fadeIn('slow')
-
+                    
+                    // sweetalert2 套件
+                    await Swal.fire({
+                        title: '時間到，遊戲結束',
+                        icon: 'info',
+                        text: `你得到 ${score} 分`
+                    })
 
                     // 最高分
-                    if (score > $('#highscore-score').text()) {
-                        // 如果 目前分數 > highscore-score 的值
-                        // highscore-score 的值變 目前分數
-                        $('#highscore-score').text(score)
-                        // 跳出輸入玩家名稱
-                        $('#highscore-player').text(prompt(`你是目前最高分! 請輸入名字`))
-                        // 如果沒輸入名稱，就是路人
-                        if ($('#highscore-player').text === null || $('#highscore-player').text().length === 0) {
-                            $('#highscore-player').text('路人')
-                        }
-                        // 輸入後的玩家和分數，存到網頁裡的highscore                        
-                        highscore.name = $('#highscore-player').text()
-                        highscore.score = $('#highscore-score').text()
-                        localStorage.setItem('killdragon', JSON.stringify(highscore))
-                    }
+                    HighScore()
                 }
             }, 1000);
         })
@@ -308,23 +339,11 @@
                 bullet--
                 $('#bullettext').text(bullet)
                 $(this).fadeOut(1000)
-                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
-                if (bullet <= 0) {
-                    clearInterval(timer)
-                    // sweetalert2 套件
-                    Swal.fire({
-                        title: '子彈沒了，遊戲結束',
-                        icon: 'info',
-                        text: `你得到 ${score} 分`
-                    })
-                    $('#game img').remove()
-                    $(this).attr('disabled', false)
-                    $('#btn-reset').addClass('none')
-                    $('#board').fadeIn('slow')
-                }
                 setTimeout(() => {
                     $(this).remove()
-                }, 1000);
+                }, 1000)
+                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
+                NoBullets()
             } else if ($(this).attr('src') == './images/red.gif') {
                 $(this).attr('src', './images/reddie.png')
                 $(this).stop()
@@ -333,23 +352,11 @@
                 bullet--
                 $('#bullettext').text(bullet)
                 $(this).fadeOut(1000)
-                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
-                if (bullet <= 0) {
-                    clearInterval(timer)
-                    // sweetalert2 套件
-                    Swal.fire({
-                        title: '子彈沒了，遊戲結束',
-                        icon: 'info',
-                        text: `你得到 ${score} 分`
-                    })
-                    $('#game img').remove()
-                    $(this).attr('disabled', false)
-                    $('#btn-reset').addClass('none')
-                    $('#board').fadeIn('slow')
-                }
                 setTimeout(() => {
                     $(this).remove()
-                }, 1000);
+                }, 1000)
+                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
+                NoBullets()
             } else if ($(this).attr('src') == './images/black.gif') {
                 $(this).attr('src', './images/blackdie.png')
                 $(this).stop()
@@ -358,23 +365,11 @@
                 bullet--
                 $('#bullettext').text(bullet)
                 $(this).fadeOut(1000)
-                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
-                if (bullet <= 0) {
-                    clearInterval(timer)
-                    // sweetalert2 套件
-                    Swal.fire({
-                        title: '子彈沒了，遊戲結束',
-                        icon: 'info',
-                        text: `你得到 ${score} 分`
-                    })
-                    $('#game img').remove()
-                    $(this).attr('disabled', false)
-                    $('#btn-reset').addClass('none')
-                    $('#board').fadeIn('slow')
-                }
                 setTimeout(() => {
                     $(this).remove()
-                }, 1000);
+                }, 1000)
+                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
+                NoBullets()
             } else if ($(this).attr('src') == './images/Gargoyle.gif') {
                 $(this).attr('src', './images/Gargoyledie.png')
                 $(this).stop()
@@ -383,23 +378,11 @@
                 bullet--
                 $('#bullettext').text(bullet)
                 $(this).fadeOut(1000)
-                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
-                if (bullet <= 0) {
-                    clearInterval(timer)
-                    // sweetalert2 套件
-                    Swal.fire({
-                        title: '子彈沒了，遊戲結束',
-                        icon: 'info',
-                        text: `你得到 ${score} 分`
-                    })
-                    $('#game img').remove()
-                    $(this).attr('disabled', false)
-                    $('#btn-reset').addClass('none')
-                    $('#board').fadeIn('slow')
-                }
                 setTimeout(() => {
                     $(this).remove()
-                }, 1000);
+                }, 1000)
+                // 假如點擊到龍或石像時，子彈剛好為 0 ，遊戲結束
+                NoBullets()
             }
         })
     </script>
